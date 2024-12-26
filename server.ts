@@ -1,52 +1,109 @@
-import { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
-import express from "express";
-const app = express();
-const port = 3000;
-// use body parser
-app.use(express.json());
+import dotenv from "dotenv";
+import { body, validationResult } from "express-validator";
+import morgan from "morgan";
 
-app.get("/", async (req: Request, res: Response) => {
+// Load environment variables
+dotenv.config();
+
+const prisma = new PrismaClient();
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+app.use(morgan("dev")); // Logs in 'dev' format (color-coded, concise)
+
+// Error handling middleware
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error(err.stack);
+  res.status(500).send("Something broke!");
+});
+
+// Routes
+app.get("/", (req: Request, res: Response) => {
   res.send("Eventos Server is running!!");
 });
 
-app.post("/user", async (req: Request, res: Response) => {
-  console.log(req.body);
-  const result = await prisma.user.create({
-    data: req.body,
-  });
-  res.status(201).json(result);
+const userValidator = [
+  body("email").isEmail().withMessage("Must be a valid email"),
+  body("userName").isString().notEmpty(),
+  body("password")
+    .isString()
+    .notEmpty()
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long"),
+];
+
+app.post("/user", userValidator, async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const result = await prisma.user.create({
+      data: req.body,
+    });
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to create user" });
+  }
 });
 
 app.get("/user", async (req: Request, res: Response) => {
-  const result = await prisma.user.findMany({
-    include: {
-      attendee: true,
-    },
-  });
-  res.status(200).json(result);
+  try {
+    const result = await prisma.user.findMany({
+      include: {
+        attendee: true,
+      },
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
 });
 
 app.get("/user/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await prisma.user.findUnique({
-    where: {
-      id: id,
-    },
-  });
-  res.status(200).json(result);
+  try {
+    const result = await prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!result) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch user" });
+  }
 });
 
-// create origanizer
+app.post(
+  "/attendee",
+  body("name").isString().notEmpty(),
+  body("email").isEmail(),
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-app.post("/attendee", async (req: Request, res: Response) => {
-  const result = await prisma.attendee.create({
-    data: req.body,
-  });
-  res.status(201).json(result);
-});
+    try {
+      const result = await prisma.attendee.create({
+        data: req.body,
+      });
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create attendee" });
+    }
+  }
+);
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`Server listening on port ${port}`);
 });

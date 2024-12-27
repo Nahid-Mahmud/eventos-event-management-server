@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 import { body, validationResult } from "express-validator";
 import morgan from "morgan";
+import { userValidator } from "./validator/validators";
 
 // Load environment variables
 dotenv.config();
@@ -25,17 +26,6 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 app.get("/", (req: Request, res: Response) => {
   res.send("Eventos Server is running!!");
 });
-
-const userValidator = [
-  body("email").isEmail().withMessage("Must be a valid email"),
-  body("userName").isString().notEmpty().withMessage("Username is required"),
-  body("password")
-    .isString()
-    .notEmpty()
-    .isLength({ min: 6 })
-    .withMessage("Password must be at least 6 characters long"),
-  body("role").isIn(["attendee", "organizer"]).withMessage("Role must be either organizer or attendee"),
-];
 
 app.post("/user", userValidator, async (req: Request, res: Response) => {
   const errors = validationResult(req);

@@ -28,7 +28,7 @@ app.get("/", (req: Request, res: Response) => {
 
 const userValidator = [
   body("email").isEmail().withMessage("Must be a valid email"),
-  body("userName").isString().notEmpty(),
+  body("userName").isString().notEmpty().withMessage("Username is required"),
   body("password")
     .isString()
     .notEmpty()
@@ -42,13 +42,34 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
+  // 2nd level checker
+
+  const { email, userName } = req.body;
+
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        {
+          email: email,
+        },
+        {
+          userName: userName,
+        },
+      ],
+    },
+  });
+
+  if (user) {
+    return res.status(400).json({ error: "User already exists" });
+  }
+
   try {
     const result = await prisma.user.create({
       data: req.body,
     });
     res.status(201).json(result);
   } catch (error) {
-    res.status(500).json({ error: "Failed to create user" });
+    res.status(500).json({ error });
   }
 });
 

@@ -34,6 +34,7 @@ const userValidator = [
     .notEmpty()
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
+  body("role").isIn(["attendee", "organizer"]).withMessage("Role must be either organizer or attendee"),
 ];
 
 app.post("/user", userValidator, async (req: Request, res: Response) => {
@@ -60,7 +61,7 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
   });
 
   if (user) {
-    return res.status(400).json({ error: "User already exists" });
+    return res.status(400).json({ error: "User already exists with the same Email or username" });
   }
 
   try {
@@ -75,11 +76,7 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
 
 app.get("/user", async (req: Request, res: Response) => {
   try {
-    const result = await prisma.user.findMany({
-      include: {
-        attendee: true,
-      },
-    });
+    const result = await prisma.user.findMany();
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch users" });

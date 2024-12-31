@@ -72,10 +72,17 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
   }
 });
 
-app.get("/user", async (req: Request, res: Response) => {
+// Get all users along with their roles (attendee/organizer)
+
+app.get("/users", async (req: Request, res: Response) => {
   try {
-    const result = await prisma.user.findMany();
-    res.status(200).json(result);
+    const users = await prisma.user.findMany({
+      include: {
+        attendee: true,
+        organizer: true,
+      },
+    });
+    res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch users" });
   }

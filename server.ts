@@ -33,34 +33,42 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  // 2nd level checker
+  const { email, userName, password, role, ...rest } = req.body;
 
-  const { email, userName } = req.body;
-
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        {
-          email: email,
-        },
-        {
-          userName: userName,
-        },
-      ],
-    },
+  // Check for existing user
+  const existingUser = await prisma.user.findFirst({
+    where: { OR: [{ email }, { userName }] },
   });
 
-  if (user) {
+  if (existingUser) {
     return res.status(400).json({ error: "User already exists with the same Email or username" });
   }
 
   try {
-    const result = await prisma.user.create({
-      data: req.body,
+    // Create the user
+    const user = await prisma.user.create({
+      data: { email, userName, password, ...rest },
     });
+
+    let result;
+
+    // If role is attendee, create attendee
+    if (role === "attendee") {
+      result = await prisma.attendee.create({
+        data: { email, userId: user.id, ...rest },
+      });
+    }
+    // If role is organizer, create organizer
+    else if (role === "organizer") {
+      result = await prisma.organizer.create({
+        data: { email, userId: user.id, ...rest },
+      });
+    }
+
     res.status(201).json(result);
   } catch (error) {
-    res.status(500).json({ error });
+    console.error("Error creating user:", error);
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 

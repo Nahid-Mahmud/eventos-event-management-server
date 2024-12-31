@@ -18,7 +18,7 @@ model User {
   email     String      @unique
   userName  String      @unique
   password  String
-  name      String?
+  name      String
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   organizer Organizer[]
@@ -32,6 +32,8 @@ model Organizer {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   email     String
+  city      String
+  country   String
   userId    String   @db.ObjectId
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -44,10 +46,12 @@ model Attendee {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   email     String
+  city      String
+  country   String
   userId    String   @db.ObjectId
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  uesr      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@map("attendees")
 }

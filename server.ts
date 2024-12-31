@@ -88,6 +88,21 @@ app.get("/users", async (req: Request, res: Response) => {
   }
 });
 
+// get all attendees with user details
+
+app.get("/attendees", async (req: Request, res: Response) => {
+  try {
+    const attendees = await prisma.attendee.findMany({
+      include: {
+        user: true,
+      },
+    });
+    res.status(200).json(attendees);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch attendees" });
+  }
+});
+
 app.get("/user/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   try {

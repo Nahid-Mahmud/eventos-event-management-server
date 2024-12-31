@@ -9,6 +9,7 @@ const userValidator = [
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
   body("role").isIn(["attendee", "organizer"]).withMessage("Role must be either organizer or attendee"),
+  body("name").isString().notEmpty().withMessage("Name is required"),
 ];
 
 export { userValidator };

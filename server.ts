@@ -33,7 +33,7 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { email, userName, password, name, role, ...rest } = req.body;
+  const { email, userName, password, role, ...rest } = req.body;
 
   // Check for existing user
   const existingUser = await prisma.user.findFirst({
@@ -44,11 +44,10 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
     return res.status(400).json({ error: "User already exists with the same Email or username" });
   }
 
-  
   try {
     // Create the user
     const user = await prisma.user.create({
-      data: { email, userName, password, role, name },
+      data: { email, userName, password, role },
     });
 
     let result;
@@ -56,13 +55,13 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
     // If role is attendee, create attendee
     if (role === "attendee") {
       result = await prisma.attendee.create({
-        data: { email, userId: user.id, name, ...rest },
+        data: { userId: user.id, ...rest },
       });
     }
     // If role is organizer, create organizer
     else if (role === "organizer") {
       result = await prisma.organizer.create({
-        data: { email, userId: user.id, name, ...rest },
+        data: { userId: user.id, ...rest },
       });
     }
 

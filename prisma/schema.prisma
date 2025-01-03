@@ -18,7 +18,6 @@ model User {
   email     String      @unique
   userName  String      @unique
   password  String
-  name      String
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   organizer Organizer[]
@@ -31,7 +30,6 @@ model User {
 model Organizer {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  email     String
   city      String
   country   String
   userId    String   @db.ObjectId
@@ -45,7 +43,6 @@ model Organizer {
 model Attendee {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  email     String
   city      String
   country   String
   userId    String   @db.ObjectId

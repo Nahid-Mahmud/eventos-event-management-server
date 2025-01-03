@@ -44,6 +44,7 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
     return res.status(400).json({ error: "User already exists with the same Email or username" });
   }
 
+  
   try {
     // Create the user
     const user = await prisma.user.create({

@@ -28,47 +28,55 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.post("/user", userValidator, async (req: Request, res: Response) => {
+  // Handle validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { email, userName, password, name, role, ...rest } = req.body;
-
-  // Check for existing user
-  const existingUser = await prisma.user.findFirst({
-    where: { OR: [{ email }, { userName }] },
-  });
-
-  if (existingUser) {
-    return res.status(400).json({ error: "User already exists with the same Email or username" });
-  }
+  const { email, userName, password, role, ...rest } = req.body;
 
   try {
-    // Create the user
-    const user = await prisma.user.create({
-      data: { email, userName, password, role, name },
+    // Check if email or username already exists
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email }, { userName }],
+      },
     });
 
-    let result;
-
-    // If role is attendee, create attendee
-    if (role === "attendee") {
-      result = await prisma.attendee.create({
-        data: { email, userId: user.id, name, ...rest },
+    if (existingUser) {
+      console.log(existingUser?.email);
+      return res.status(400).json({
+        error:
+          existingUser.email === email
+            ? `User already exists with the '${existingUser?.email}' Email.`
+            : `User already exists with the '${existingUser?.userName}' username.`,
       });
     }
-    // If role is organizer, create organizer
-    else if (role === "organizer") {
-      result = await prisma.organizer.create({
-        data: { email, userId: user.id, name, ...rest },
+
+    // Create the user
+    const user = await prisma.user.create({
+      data: { email, userName, password, role },
+    });
+
+    // Create role-specific entity
+    let result;
+    if (role === "attendee") {
+      result = await prisma.attendee.create({
+        data: { userId: user.id, ...rest },
       });
+    } else if (role === "organizer") {
+      result = await prisma.organizer.create({
+        data: { userId: user.id, ...rest },
+      });
+    } else {
+      return res.status(400).json({ error: `Invalid role: ${role}` });
     }
 
     res.status(201).json(result);
   } catch (error) {
     console.error("Error creating user:", error);
-    res.status(500).json({ error: (error as Error).message });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

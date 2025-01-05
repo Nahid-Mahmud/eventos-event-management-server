@@ -5,6 +5,8 @@ import { body, validationResult } from "express-validator";
 import morgan from "morgan";
 import { userValidator } from "./validator/validators";
 import formatError from "./formatError";
+// use bcrypt to hash passwords
+import bcrypt from "bcrypt";
 
 // Load environment variables
 dotenv.config();
@@ -56,16 +58,21 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
     }
 
     // Use a transaction to create the user and role-specific entity
+
+    const saltRounds = 10;
+
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
     const result = await prisma.$transaction(async (tx) => {
       // Create the user
       const user = await tx.user.create({
-        data: { email, userName, password, role },
+        data: { email, userName, password:hashedPassword, role },
       });
 
       // Create role-specific entity
       if (role === "attendee") {
         return await tx.attendee.create({
-          data: { userId: user.id,hello:"hello", ...rest },
+          data: { userId: user.id, ...rest },
         });
       } else if (role === "organizer") {
         return await tx.organizer.create({

@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, oneOf } from "express-validator";
 
 const userValidator = [
   body("email").isEmail().withMessage("Must be a valid email"),
@@ -12,4 +12,12 @@ const userValidator = [
   body("name").isString().notEmpty().withMessage("Name is required"),
 ];
 
-export { userValidator };
+const loginValidator = [
+  body("email").isEmail().withMessage("Must be a valid email"),
+  oneOf([
+    body("password").isString().notEmpty().withMessage("Password is required"),
+    body("userName").isString().notEmpty().withMessage("Username is required"),
+  ]),
+];
+
+export { userValidator, loginValidator };

@@ -3,10 +3,14 @@ import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 import { body, validationResult } from "express-validator";
 import morgan from "morgan";
-import { userValidator } from "./validator/validators";
+import { loginValidator, userValidator } from "./validator/validators";
 import formatError from "./formatError";
 // use bcrypt to hash passwords
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+const accessTokenSecret = "youraccesstokenefjegcjlegcjlopfecjpofcekoegcsecret";
+const refreshTokenSecret = "yourrefreshtokeadfadsfnsecret";
 
 // Load environment variables
 dotenv.config();
@@ -66,7 +70,7 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
     const result = await prisma.$transaction(async (tx) => {
       // Create the user
       const user = await tx.user.create({
-        data: { email, userName, password:hashedPassword, role },
+        data: { email, userName, password: hashedPassword, role },
       });
 
       // Create role-specific entity
@@ -136,6 +140,54 @@ app.get("/user/:id", async (req: Request, res: Response) => {
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch user" });
+  }
+});
+
+// login user with email or username and password
+
+app.post("/login", loginValidator, async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email, userName, password } = req.body;
+
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [{ email }, { userName }],
+      },
+      include: {
+        attendee: true,
+        organizer: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+
+    if (!validPassword) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    const accessToken = jwt.sign({ email: user.email, userName: user.userName, role: user.role }, accessTokenSecret, {
+      expiresIn: "1h",
+    });
+    const refreshToken = jwt.sign({ email: user.email, userName: user.userName, role: user.role }, refreshTokenSecret, {
+      expiresIn: "7d",
+    });
+
+    const { password: _, ...rest } = user;
+    // create access token and refresh token
+    
+
+    res.status(200).json({ data: rest, tokens: { accessToken, refreshToken } });
+  } catch (error) {
+    res.status(500).json(formatError(error));
   }
 });
 

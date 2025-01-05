@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { body, validationResult } from "express-validator";
 import morgan from "morgan";
 import { userValidator } from "./validator/validators";
+import formatError from "./formatError";
 
 // Load environment variables
 dotenv.config();
@@ -17,10 +18,10 @@ app.use(express.json());
 app.use(morgan("dev")); // Logs in 'dev' format (color-coded, concise)
 
 // Error handling middleware
-// app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-//   console.error(err.stack);
-//   res.status(500).send("Something broke!");
-// });
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error(err.stack);
+  res.status(500).send("Something broke!");
+});
 
 // Routes
 app.get("/", (req: Request, res: Response) => {
@@ -64,7 +65,7 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
       // Create role-specific entity
       if (role === "attendee") {
         return await tx.attendee.create({
-          data: { userId: user.id, ...rest },
+          data: { userId: user.id,hello:"hello", ...rest },
         });
       } else if (role === "organizer") {
         return await tx.organizer.create({
@@ -78,7 +79,7 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
     res.status(201).json(result);
   } catch (error: unknown) {
     console.error("Error creating user:", error);
-    res.status(500).json({ error: (error as Error).message });
+    res.status(500).json(formatError(error));
   }
 });
 

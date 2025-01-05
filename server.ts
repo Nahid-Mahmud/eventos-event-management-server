@@ -54,24 +54,27 @@ app.post("/user", userValidator, async (req: Request, res: Response) => {
       });
     }
 
-    // Create the user
-    const user = await prisma.user.create({
-      data: { email, userName, password, role },
-    });
+    // Use a transaction to create the user and role-specific entity
+    const result = await prisma.$transaction(async (tx) => {
+      // Create the user
+      const user = await tx.user.create({
+        data: { email, userName, password, role },
+      });
 
-    // Create role-specific entity
-    let result;
-    if (role === "attendee") {
-      result = await prisma.attendee.create({
-        data: { userId: user.id, ...rest },
-      });
-    } else if (role === "organizer") {
-      result = await prisma.organizer.create({
-        data: { userId: user.id, ...rest },
-      });
-    } else {
-      return res.status(400).json({ error: `Invalid role: ${role}` });
-    }
+
+      // Create role-specific entity
+      if (role === "attendee") {
+        return await tx.attendee.create({
+          data: { userId: user.id, ...rest },
+        });
+      } else if (role === "organizer") {
+        return await tx.organizer.create({
+          data: { userId: user.id, ...rest },
+        });
+      } else {
+        throw new Error(`Invalid role: ${role}`);
+      }
+    });
 
     res.status(201).json(result);
   } catch (error) {

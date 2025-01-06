@@ -8,12 +8,14 @@ import formatError from "./formatError";
 // use bcrypt to hash passwords
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+dotenv.config();
 
-const accessTokenSecret = "youraccesstokenefjegcjlegcjlopfecjpofcekoegcsecret";
-const refreshTokenSecret = "yourrefreshtokeadfadsfnsecret";
+// const accessTokenSecret = "youraccesstokenefjegcjlegcjlopfecjpofcekoegcsecret";
+// const refreshTokenSecret = "yourrefreshtokeadfadsfnsecret";
 
 // Load environment variables
-dotenv.config();
+const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET!;
+const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET!;
 
 const prisma = new PrismaClient();
 const app = express();
@@ -183,7 +185,6 @@ app.post("/login", loginValidator, async (req: Request, res: Response) => {
 
     const { password: _, ...rest } = user;
     // create access token and refresh token
-    
 
     res.status(200).json({ data: rest, tokens: { accessToken, refreshToken } });
   } catch (error) {

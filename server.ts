@@ -14,8 +14,8 @@ dotenv.config();
 // const refreshTokenSecret = "yourrefreshtokeadfadsfnsecret";
 
 // Load environment variables
-const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET!;
-const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET!;
+const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET || "youraccesstokenefjegcjlegcjlopfecjpofcekoegcsecret";
+const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || "yourrefakldsfaflkalkdflaksdflk";
 
 const prisma = new PrismaClient();
 const app = express();

@@ -195,3 +195,15 @@ app.post("/login", loginValidator, async (req: Request, res: Response) => {
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
+
+// photo and video upload in with corner case
+
+// update user 
+
+// weekly / monthly /yearly summery (Meta data) for all interection using aggregation pipeline
+
+// get all fetaures apply pagination 
+
+// sorting and searching 
+
+// Field seceltion (Dynamic)
